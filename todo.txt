@@ -1,6 +1,6 @@
 [x] have basic genome
+[x] hexcode genome string
 [ ] edges participate in sequence
-[ ] recreate from genome strings
-[ ] hexcode genome string
-[ ] rand function for genome
+[x] recreate from genome strings
+[x] rand function for genome
 [ ] way to test new genome
