@@ -192,6 +192,8 @@ fn main() {
     const CELL_COUNT: usize = 48;
 
     let mut cells: Vec<Cell> = (0..CELL_COUNT).map(|_| rand::random::<Cell>()).collect();
+    cells.iter().for_each(|c| print!("{}", c));
+    println!();
 
     for _ in 0..TIMESTEP_COUNT {
         let mut next_cells: Vec<Cell> = Vec::with_capacity(CELL_COUNT);
