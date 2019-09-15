@@ -10,6 +10,15 @@ enum State {
     Off = 0,
     On = 1,
 }
+impl State {
+    pub fn from_bool(b: bool) -> State {
+        if b {
+            State::On
+        } else {
+            State::Off
+        }
+    }
+}
 struct Cell {
     state: State,
 }
@@ -79,10 +88,7 @@ impl Genome {
             (accumulator << 1) | (cell.state as u8)
         });
 
-        match self.sequence[key as usize] {
-            true => State::On,
-            false => State::Off,
-        }
+        State::from_bool(self.sequence[key as usize])
     }
 }
 
