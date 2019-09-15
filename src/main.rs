@@ -19,6 +19,7 @@ impl State {
         }
     }
 }
+#[derive(Clone)]
 struct Cell {
     state: State,
 }
@@ -35,6 +36,15 @@ impl Distribution<Cell> for Standard {
 }
 
 impl fmt::Display for Cell {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let c = match self.state {
+            State::On => '🔵',
+            State::Off => '🔴',
+        };
+        write!(f, "{}", c)
+    }
+}
+impl fmt::Debug for Cell {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let c = match self.state {
             State::On => '🔵',
@@ -158,22 +168,26 @@ fn main() {
 
     for _ in 0..TIMESTEP_COUNT {
         let mut next_cells: Vec<Cell> = Vec::with_capacity(CELL_COUNT);
-        // TODO just push three
-        next_cells.push(Cell { state: State::Off });
-        next_cells.push(Cell { state: State::Off });
-        next_cells.push(Cell { state: State::Off });
 
-        // for earch cell
-        for i in 3..CELL_COUNT - 3 {
-            let window = &cells[i - 3..=i + 3];
+        // now mutate cells so we can have our window
+        let window_size = 7;
+        let cap_size = 7 / 2;
+        let cap_front = &cells[cells.len() - cap_size..cells.len()];
+        let cap_back = &cells[0..cap_size];
+
+        let mut iter = Vec::with_capacity(cells.len() + cap_size * 2);
+
+        // TODO: have this handled else where.
+        // We just want a get_next_state(cell);
+        iter.extend_from_slice(cap_front);
+        iter.extend_from_slice(&cells[..]);
+        iter.extend_from_slice(cap_back);
+
+        // TODO change this to iterate over windows
+        for window in iter.windows(window_size) {
             let state = genome.foo(&window);
             next_cells.push(Cell { state });
         }
-
-        // calc the cells we're not handling for now
-        next_cells.push(Cell { state: State::Off });
-        next_cells.push(Cell { state: State::Off });
-        next_cells.push(Cell { state: State::Off });
 
         // update curr to next
         cells = next_cells;

@@ -1,7 +1,9 @@
 [x] have basic genome
 [x] hexcode genome string
-[ ] edges participate in sequence
+[x] edges participate in sequence
 [x] recreate from genome strings
 [x] rand function for genome
 [ ] way to test new genome
 [ ] add initial configuration cmdline arg
+[ ] add get_next_state() -> Cell to cells
+[ ] plan out genetic algorithm portion.
