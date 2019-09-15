@@ -5,10 +5,10 @@ use std::fmt;
 use std::io::{self, Write};
 use std::{thread, time};
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 enum State {
-    On,
-    Off,
+    Off = 0,
+    On = 1,
 }
 struct Cell {
     state: State,
@@ -37,6 +37,7 @@ impl fmt::Display for Cell {
 
 const NUM_CELLS_PER_CONFIGURATION: usize = 7;
 
+// TODO: have this return state
 struct Genome {
     sequence: Vec<bool>,
 }
@@ -50,92 +51,47 @@ impl Genome {
         }
     }
 
-    fn from_string(s: &str) -> Genome {
+    fn from_hex_str(s: &str) -> Genome {
         assert_eq!(s.len(), Genome::SIZE / 4);
 
         let mut sequence: Vec<bool> = Vec::with_capacity(Genome::SIZE);
         for c in s.chars() {
-            match c {
-                '0' => sequence.append(&mut vec![false, false, false, false]),
-                '1' => sequence.append(&mut vec![true, false, false, false]),
-                '2' => sequence.append(&mut vec![false, true, false, false]),
-                '3' => sequence.append(&mut vec![true, true, false, false]),
-                '4' => sequence.append(&mut vec![false, false, true, false]),
-                '5' => sequence.append(&mut vec![true, false, true, false]),
-                '6' => sequence.append(&mut vec![false, true, true, false]),
-                '7' => sequence.append(&mut vec![true, true, true, false]),
-                '8' => sequence.append(&mut vec![false, false, false, true]),
-                '9' => sequence.append(&mut vec![true, false, false, true]),
-                'A' => sequence.append(&mut vec![false, true, false, true]),
-                'B' => sequence.append(&mut vec![true, true, false, true]),
-                'C' => sequence.append(&mut vec![false, false, true, true]),
-                'D' => sequence.append(&mut vec![true, false, true, true]),
-                'E' => sequence.append(&mut vec![false, true, true, true]),
-                'F' => sequence.append(&mut vec![true, true, true, true]),
-                _ => panic!("illegal character in genome {}", c),
+            assert_eq!(c.is_digit(16), true);
+
+            match c.to_digit(16) {
+                Some(mut d) => {
+                    while d != 0 {
+                        sequence.push((d & 0b01) == 0b01);
+                        d >>= 1;
+                    }
+                }
+                None => panic!("illegal character in genome {}", c),
             }
         }
-
         Genome { sequence }
     }
 
-    // TODO: clean this up... too complicated
-    fn foo(&self, x: &[bool; NUM_CELLS_PER_CONFIGURATION]) -> State {
-        let mut index = 0;
-        if x[0] {
-            index |= 0b1000000;
-        }
-        if x[1] {
-            index |= 0b0100000;
-        }
-        if x[2] {
-            index |= 0b0010000;
-        }
-        if x[3] {
-            index |= 0b0001000;
-        }
-        if x[4] {
-            index |= 0b0000100;
-        }
-        if x[5] {
-            index |= 0b0000010;
-        }
-        if x[6] {
-            index |= 0b0000001;
-        }
+    fn foo(&self, neighborhood: &[Cell]) -> State {
+        // TODO make guarantee about size
+        assert_eq!(neighborhood.len(), 7);
 
-        if self.sequence[index] {
-            State::On
-        } else {
-            State::Off
+        let key = neighborhood.iter().fold(0, |accumulator, cell| {
+            (accumulator << 1) | (cell.state as u8)
+        });
+
+        match self.sequence[key as usize] {
+            true => State::On,
+            false => State::Off,
         }
     }
 }
 
-impl fmt::Display for Genome {
+impl fmt::UpperHex for Genome {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // TODO convert this string to a cool HEX
         for chunk in self.sequence.chunks_exact(4) {
-            let c = match chunk {
-                &[false, false, false, false] => '0',
-                &[true, false, false, false] => '1',
-                &[false, true, false, false] => '2',
-                &[true, true, false, false] => '3',
-                &[false, false, true, false] => '4',
-                &[true, false, true, false] => '5',
-                &[false, true, true, false] => '6',
-                &[true, true, true, false] => '7',
-                &[false, false, false, true] => '8',
-                &[true, false, false, true] => '9',
-                &[false, true, false, true] => 'A',
-                &[true, true, false, true] => 'B',
-                &[false, false, true, true] => 'C',
-                &[true, false, true, true] => 'D',
-                &[false, true, true, true] => 'E',
-                &[true, true, true, true] => 'F',
-                _ => panic!("Genome sequence is not a multiple of chunk size"),
-            };
-            write!(f, "{}", c)?
+            let c = chunk.iter().fold(0, |acc, b| (acc << 1) | (*b as u8));
+            write!(f, "{:X}", c)?
         }
         Ok(())
     }
@@ -166,7 +122,7 @@ fn main() {
             }
             thread::sleep(time::Duration::from_millis(250));
             println!();
-            Genome::from_string(genome_string)
+            Genome::from_hex_str(genome_string)
         }
         None => {
             print!("No genome given.");
@@ -185,7 +141,6 @@ fn main() {
             Genome::new()
         }
     };
-    //process::exit(1);
 
     const SLEEP_DURATION: time::Duration = time::Duration::from_millis(250);
     const TIMESTEP_COUNT: i32 = 40;
@@ -202,19 +157,10 @@ fn main() {
         next_cells.push(Cell { state: State::Off });
         next_cells.push(Cell { state: State::Off });
 
+        // for earch cell
         for i in 3..CELL_COUNT - 3 {
-            let sequence = [
-                cells[i - 3].state == State::On,
-                cells[i - 2].state == State::On,
-                cells[i - 1].state == State::On,
-                cells[i].state == State::On,
-                cells[i + 1].state == State::On,
-                cells[i + 2].state == State::On,
-                cells[i + 3].state == State::On,
-            ];
-
-            let state = genome.foo(&sequence);
-
+            let window = &cells[i - 3..=i + 3];
+            let state = genome.foo(&window);
             next_cells.push(Cell { state });
         }
 
@@ -232,5 +178,5 @@ fn main() {
         println!();
     }
     println!();
-    println!("Genome:{}", genome);
+    println!("Genome:{:X}", genome);
 }

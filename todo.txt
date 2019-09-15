@@ -4,3 +4,4 @@
 [x] recreate from genome strings
 [x] rand function for genome
 [ ] way to test new genome
+[ ] add initial configuration cmdline arg
