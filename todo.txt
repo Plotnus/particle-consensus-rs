@@ -1,3 +1,4 @@
+[ ] fix regression of genome string io
 [x] have basic genome
 [x] hexcode genome string
 [x] edges participate in sequence
