@@ -2,8 +2,6 @@ use rand::distributions::{Distribution, Standard};
 use rand::Rng;
 use std::fmt;
 
-const NUM_CELLS_PER_CONFIGURATION: usize = 7;
-
 #[derive(Clone)]
 pub struct Cell {
     // TODO make state private
@@ -26,13 +24,11 @@ impl State {
     }
 }
 
-impl Distribution<Cell> for Standard {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Cell {
-        Cell {
-            state: match rng.gen_bool(0.5) {
-                true => State::On,
-                false => State::Off,
-            },
+impl Distribution<State> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> State {
+        match rng.gen_bool(0.5) {
+            true => State::On,
+            false => State::Off,
         }
     }
 }
@@ -57,6 +53,7 @@ impl fmt::Debug for Cell {
 }
 
 // TODO: split into Genome, Society,
+#[derive(Clone)]
 pub struct Genome {
     sequence: Vec<bool>,
 }
